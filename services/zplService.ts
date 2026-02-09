@@ -1,7 +1,7 @@
 
 import { settings } from '../config';
 
-const ZEBRA_ENDPOINT = "http://127.0.0.1:9100/write";
+const ZEBRA_ENDPOINT = "http://1227.0.0.1:9100/write";
 
 const processNameForZPL = (fullName: string, maxLength = 0): string => {
     const trimmedName = fullName.trim();
@@ -94,10 +94,8 @@ export const generateGuardianZPL = (
     return zpl.trim();
 };
 
-export const printZpl = async (zpl: string): Promise<{ success: boolean; message: string }> => {
-    // This payload structure is based on the PHP reference code's JS part.
-    // Zebra Browser Print typically requires this format.
-    const payload = {
+export const constructPayload = (zpl: string) => {
+    return {
         device: {
             name: "ZDesigner 105SL", // Placeholder, might need configuration
             uid: "ZDesigner 105SL",
@@ -109,6 +107,10 @@ export const printZpl = async (zpl: string): Promise<{ success: boolean; message
         },
         data: zpl
     };
+};
+
+export const printZpl = async (zpl: string): Promise<{ success: boolean; message: string }> => {
+    const payload = constructPayload(zpl);
 
     try {
         const response = await fetch(ZEBRA_ENDPOINT, {

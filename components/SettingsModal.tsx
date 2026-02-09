@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { settings, saveSettings } from '../config';
 
@@ -34,7 +35,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose }) => {
         }
     };
     
-    const handleChange = (key: string, value: string | number | string[]) => {
+    const handleChange = (key: string, value: string | number | string[] | boolean) => {
         setCurrentSettings(prev => ({ ...prev, [key]: value }));
     };
 
@@ -100,7 +101,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose }) => {
                         <InputField label="Tamanho da Pulseira (mm)" value={currentSettings.TAMPULSEIRA} onChange={val => handleChange('TAMPULSEIRA', val)} type="number" />
                         <InputField label="Pontos por mm (DPI)" value={currentSettings.DOTS} onChange={val => handleChange('DOTS', val)} type="number" />
                         <InputField label="Tamanho do Fecho (mm)" value={currentSettings.FECHO} onChange={val => handleChange('FECHO', val)} type="number" />
-                         <InputField label="Área Útil da Pulseira (calculado)" value={calculatedPulseiraUtil} readOnly />
+                        <InputField label="Área Útil da Pulseira (calculado)" value={calculatedPulseiraUtil} readOnly />
+                        <div className="mt-4 pt-3 border-t">
+                            <ToggleField 
+                                label="Ativar Modo de Depuração ZPL" 
+                                checked={!!currentSettings.ZPL_DEBUG_MODE} 
+                                onChange={val => handleChange('ZPL_DEBUG_MODE', val)} 
+                                description="Exibe o código ZPL e o payload em uma janela para análise antes de enviar para a impressora."
+                            />
+                        </div>
                     </>
                 );
             case 'Estatísticas':
@@ -159,17 +168,35 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose }) => {
     );
 };
 
-// @google/genai-fix: Make `onChange` optional by providing a default value and remove redundant optional chaining.
-const InputField = ({ label, value, onChange = () => {}, type = 'text', readOnly = false }) => (
+// FIX: Corrected the default function for the `onChange` prop to accept a value. This resolves multiple type errors
+// by ensuring the function signature inferred by TypeScript matches its usage throughout the component.
+const InputField = ({ label, value, onChange = (_value: any) => {}, type = 'text', readOnly = false }) => (
     <div>
         <label className="block text-gray-700 text-sm font-bold mb-2">{label}</label>
         <input
             type={type}
             value={value}
-            onChange={e => onChange?.(e.target.value)}
+            onChange={e => onChange(e.target.value)}
             readOnly={readOnly}
             className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${readOnly ? 'bg-gray-100' : ''}`}
         />
+    </div>
+);
+
+const ToggleField = ({ label, checked, onChange, description }) => (
+    <div className="flex items-start">
+        <div className="flex items-center h-5">
+            <input
+                type="checkbox"
+                checked={checked}
+                onChange={e => onChange(e.target.checked)}
+                className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
+            />
+        </div>
+        <div className="ml-3 text-sm">
+            <label className="font-medium text-gray-700">{label}</label>
+            <p className="text-gray-500">{description}</p>
+        </div>
     </div>
 );
 

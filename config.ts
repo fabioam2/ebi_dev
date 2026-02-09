@@ -5,7 +5,7 @@ const SETTINGS_KEY = 'appSettings';
 
 // Carrega as configurações, mesclando os padrões com o que estiver salvo
 const loadConfig = () => {
-    let storedConfig = {};
+    let storedConfig: any = {};
     try {
         const stored = localStorage.getItem(SETTINGS_KEY);
         if (stored) {
@@ -16,7 +16,11 @@ const loadConfig = () => {
         localStorage.removeItem(SETTINGS_KEY);
     }
     
-    const config = { ...defaultConstants, ...storedConfig };
+    const config = { 
+        ...defaultConstants, 
+        ZPL_DEBUG_MODE: false, // Default value for the new setting
+        ...storedConfig 
+    };
 
     // Garante que o array de palavras-chave seja sempre um array
     if (typeof config.PALAVRAS_CHAVE_COMUM === 'string') {

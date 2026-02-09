@@ -9,6 +9,7 @@ import RecordsTable from './RecordsTable';
 import HeaderStats from './HeaderStats';
 import AdminModals from './AdminModals';
 import SettingsModal from './SettingsModal';
+import ZplDebugModal from './ZplDebugModal';
 import { GearIcon, LogoutIcon } from './Icons';
 
 interface DashboardProps {
@@ -21,6 +22,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [showAdminModals, setShowAdminModals] = useState<'reset' | 'backup' | null>(null);
     const [showSettingsModal, setShowSettingsModal] = useState(false);
+    const [zplDebugInfo, setZplDebugInfo] = useState<{ zpl: string, ids: number[] } | null>(null);
     
     useEffect(() => {
         setRecords(dataService.fetchAllRecords());
@@ -33,6 +35,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             return () => clearTimeout(timer);
         }
     }, [message]);
+
+    const executePrint = useCallback(async (zpl: string, ids: number[]) => {
+        const result = await zplService.printZpl(zpl);
+        if (result.success) {
+            const updatedRecords = dataService.updateRecordStatus(ids);
+            setRecords(updatedRecords);
+            setMessage({ type: 'success', text: 'Comando de impressão enviado com sucesso.' });
+        } else {
+            setMessage({ type: 'error', text: `Falha na impressão: ${result.message}` });
+        }
+    }, []);
     
     const handleAddRecords = useCallback((newRecords: Omit<ChildRecord, 'id' | 'cod_resp' | 'statusImpresso'>[]) => {
         if (newRecords.length === 0) {
@@ -67,12 +80,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
         const selectedRecords = records.filter(r => selectedIds.includes(r.id));
         const guardiansToPrint = new Map<number, { nomeResponsavel: string, criancas: string[] }>();
-        let childPrintCount = 0;
+        
+        let allZplCommands = '';
 
         for (const record of selectedRecords) {
-            const zpl = zplService.generateChildZPL(record.nomeCrianca, record.nomeResponsavel, record.idade, record.id, record.telefone);
-            const result = await zplService.printZpl(zpl);
-            if(result.success) childPrintCount++;
+            allZplCommands += zplService.generateChildZPL(record.nomeCrianca, record.nomeResponsavel, record.idade, record.id, record.telefone) + '\n\n';
             
             if (record.cod_resp) {
                 if (!guardiansToPrint.has(record.cod_resp)) {
@@ -82,22 +94,19 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             }
         }
 
-        let guardianPrintCount = 0;
         for (const [cod_resp, data] of guardiansToPrint.entries()) {
-            const zpl = zplService.generateGuardianZPL(data.nomeResponsavel, data.criancas, cod_resp);
-            const result = await zplService.printZpl(zpl);
-            if(result.success) guardianPrintCount++;
+            allZplCommands += zplService.generateGuardianZPL(data.nomeResponsavel, data.criancas, cod_resp) + '\n\n';
         }
         
-        const updatedRecords = dataService.updateRecordStatus(selectedIds);
-        setRecords(updatedRecords);
+        allZplCommands = allZplCommands.trim();
+        if (!allZplCommands) return;
 
-        let successMsg = `${childPrintCount} etiqueta(s) de criança(s) processada(s).`;
-        if (guardianPrintCount > 0) {
-            successMsg += ` ${guardianPrintCount} etiqueta(s) de responsável(is) também processada(s).`;
+        if (settings.ZPL_DEBUG_MODE) {
+            setZplDebugInfo({ zpl: allZplCommands, ids: selectedIds });
+        } else {
+            executePrint(allZplCommands, selectedIds);
         }
-        setMessage({ type: 'success', text: successMsg });
-    }, [records]);
+    }, [records, executePrint]);
 
     const handleResetData = useCallback((password: string): boolean => {
         if (password === settings.SENHA_ADMIN_REAL) {
@@ -164,13 +173,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             <div className="flex justify-between items-center mb-4">
                 <HeaderStats stats={stats} />
                 <div className="flex items-center space-x-2">
-                    <div className="relative inline-block text-left">
-                      <div className="group">
+                    <div className="relative inline-block text-left group">
                         <button type="button" className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
                             <GearIcon />
                             <span className="ml-2">Ações Admin</span>
                         </button>
-                        <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden group-hover:block z-10">
+                        <div className="origin-top-right absolute right-0 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden group-hover:block z-10">
                             <div className="py-1" role="none">
                                 <button onClick={() => setShowSettingsModal(true)} className="text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100">Definir Constantes</button>
                                 <div className="border-t border-gray-100 my-1"></div>
@@ -182,7 +190,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                                 </button>
                             </div>
                         </div>
-                       </div>
                     </div>
                 </div>
             </div>
@@ -203,6 +210,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             <SettingsModal 
                 show={showSettingsModal}
                 onClose={() => setShowSettingsModal(false)}
+            />
+            
+            <ZplDebugModal
+                show={zplDebugInfo !== null}
+                onClose={() => setZplDebugInfo(null)}
+                zpl={zplDebugInfo?.zpl ?? ''}
+                onSend={(editedZpl) => {
+                    if (zplDebugInfo) {
+                        executePrint(editedZpl, zplDebugInfo.ids);
+                        setZplDebugInfo(null);
+                    }
+                }}
             />
         </div>
     );
