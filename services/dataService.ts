@@ -1,6 +1,6 @@
 
 import { ChildRecord } from '../types';
-import { MAX_BACKUPS } from '../constants';
+import { settings } from '../config';
 
 const DATA_KEY = 'childRecords';
 
@@ -23,6 +23,7 @@ const saveRecords = (records: ChildRecord[]): void => {
 const createBackup = (): void => {
     const currentData = localStorage.getItem(DATA_KEY);
     if (!currentData || JSON.parse(currentData).length === 0) return;
+    const MAX_BACKUPS = Number(settings.MAX_BACKUPS);
 
     for (let i = MAX_BACKUPS; i >= 1; i--) {
         const currentBackupKey = `backup_${i}`;
@@ -42,6 +43,7 @@ const createBackup = (): void => {
 
 export const listBackups = (): { key: string; date: Date | null }[] => {
     const backups = [];
+    const MAX_BACKUPS = Number(settings.MAX_BACKUPS);
     for (let i = 1; i <= MAX_BACKUPS; i++) {
         const key = `backup_${i}`;
         const data = localStorage.getItem(key);
@@ -130,6 +132,7 @@ export const updateRecordStatus = (ids: number[]): ChildRecord[] => {
 export const resetAllData = (): ChildRecord[] => {
     createBackup();
     saveRecords([]);
+    const MAX_BACKUPS = Number(settings.MAX_BACKUPS);
     // Per PHP logic, clear older backups but keep .bkp.1
     for (let i = 2; i <= MAX_BACKUPS; i++) {
         localStorage.removeItem(`backup_${i}`);

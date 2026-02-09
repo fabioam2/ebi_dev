@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import LoginScreen from './components/LoginScreen';
 import Dashboard from './components/Dashboard';
-import { SENHA_LOGIN } from './constants';
+import { settings } from './config';
 
 const App: React.FC = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -15,7 +15,7 @@ const App: React.FC = () => {
     }, []);
 
     const handleLogin = (password: string): boolean => {
-        if (password === SENHA_LOGIN) {
+        if (password === settings.SENHA_LOGIN) {
             sessionStorage.setItem('isLoggedIn', 'true');
             setIsLoggedIn(true);
             return true;

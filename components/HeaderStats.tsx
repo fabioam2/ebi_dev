@@ -6,7 +6,7 @@ interface HeaderStatsProps {
     stats: {
         total: number;
         total3Anos: number;
-        totalBonfim: number;
+        totalComumMatch: number;
     };
 }
 
@@ -39,9 +39,9 @@ const HeaderStats: React.FC<HeaderStatsProps> = ({ stats }) => {
             />
             <StatCard
                 icon={<HouseHeartIcon />}
-                label="Bonfim"
-                value={stats.totalBonfim}
-                title="Total de cadastros da comum Bonfim e similares"
+                label="Comum"
+                value={stats.totalComumMatch}
+                title="Total de cadastros da comum monitorada"
             />
         </div>
     );

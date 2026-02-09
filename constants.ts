@@ -12,6 +12,7 @@ export const TAMPULSEIRA = 270; // em mm
 export const DOTS = 8; // dots por mm (para 203dpi)
 export const FECHO = 35; // em mm
 export const FECHOINI = 0; // não usado no código de referência, mas mantido por consistência
+// A constante PULSEIRAUTIL é calculada dinamicamente a partir dos valores acima.
 
-// Constante Calculada
-export const PULSEIRAUTIL = (TAMPULSEIRA - FECHO) * DOTS;
+// [DASHBOARD_STATS]
+export const PALAVRAS_CHAVE_COMUM = ["bonfim", "bofim", "bonfin", "bomfim", "bon fim", "bom fin"];

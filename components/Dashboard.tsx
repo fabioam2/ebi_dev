@@ -3,11 +3,12 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ChildRecord } from '../types';
 import * as dataService from '../services/dataService';
 import * as zplService from '../services/zplService';
+import { settings } from '../config';
 import RegistrationForm from './RegistrationForm';
 import RecordsTable from './RecordsTable';
 import HeaderStats from './HeaderStats';
 import AdminModals from './AdminModals';
-import { SENHA_ADMIN_REAL } from '../constants';
+import SettingsModal from './SettingsModal';
 import { GearIcon, LogoutIcon } from './Icons';
 
 interface DashboardProps {
@@ -19,6 +20,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [showAdminModals, setShowAdminModals] = useState<'reset' | 'backup' | null>(null);
+    const [showSettingsModal, setShowSettingsModal] = useState(false);
     
     useEffect(() => {
         setRecords(dataService.fetchAllRecords());
@@ -98,7 +100,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     }, [records]);
 
     const handleResetData = useCallback((password: string): boolean => {
-        if (password === SENHA_ADMIN_REAL) {
+        if (password === settings.SENHA_ADMIN_REAL) {
             const updatedRecords = dataService.resetAllData();
             setRecords(updatedRecords);
             setMessage({ type: 'success', text: 'Arquivo de cadastros zerado com sucesso! Backup criado.' });
@@ -110,7 +112,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     }, []);
 
     const handleRestoreBackup = useCallback((password: string, backupKey: string): boolean => {
-        if (password === SENHA_ADMIN_REAL) {
+        if (password === settings.SENHA_ADMIN_REAL) {
             const success = dataService.restoreBackup(backupKey);
             if (success) {
                 setRecords(dataService.fetchAllRecords());
@@ -129,12 +131,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     const stats = useMemo(() => {
         const total = records.length;
         const total3Anos = records.filter(r => r.idade.trim() === '3').length;
-        const palavrasChaveBonfim = ["bonfim", "bofim", "bonfin", "bomfim", "bon fim", "bom fin"];
-        const totalBonfim = records.filter(r => {
+        const totalComumMatch = records.filter(r => {
             const comumLower = r.comum.toLowerCase();
-            return palavrasChaveBonfim.some(keyword => comumLower.includes(keyword));
+            return settings.PALAVRAS_CHAVE_COMUM.some(keyword => comumLower.includes(keyword));
         }).length;
-        return { total, total3Anos, totalBonfim };
+        return { total, total3Anos, totalComumMatch };
     }, [records]);
 
     if (isLoading) {
@@ -171,6 +172,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                         </button>
                         <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden group-hover:block z-10">
                             <div className="py-1" role="none">
+                                <button onClick={() => setShowSettingsModal(true)} className="text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100">Definir Constantes</button>
+                                <div className="border-t border-gray-100 my-1"></div>
                                 <button onClick={() => setShowAdminModals('reset')} className="text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100">Zerar Arquivo</button>
                                 <button onClick={() => setShowAdminModals('backup')} className="text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100">Recuperar Backup</button>
                                 <div className="border-t border-gray-100 my-1"></div>
@@ -195,6 +198,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 onClose={() => setShowAdminModals(null)}
                 onReset={handleResetData}
                 onRestore={handleRestoreBackup}
+            />
+
+            <SettingsModal 
+                show={showSettingsModal}
+                onClose={() => setShowSettingsModal(false)}
             />
         </div>
     );

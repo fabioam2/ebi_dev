@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, KeyboardEvent } from 'react';
-import { NUM_LINHAS_FORMULARIO_CADASTRO } from '../constants';
+import { settings } from '../config';
 import { ChildRecord } from '../types';
 import { CopyIcon, EraserIcon, UserPlusIcon } from './Icons';
 
@@ -10,15 +10,16 @@ interface RegistrationFormProps {
     onAddRecords: (records: FormData[]) => boolean;
 }
 
-const initialFormState: FormData[] = Array(NUM_LINHAS_FORMULARIO_CADASTRO).fill({
-    nomeCrianca: '',
-    nomeResponsavel: '',
-    idade: '',
-    telefone: '',
-    comum: ''
-});
-
 const RegistrationForm: React.FC<RegistrationFormProps> = ({ onAddRecords }) => {
+    const NUM_LINHAS_FORMULARIO_CADASTRO = Number(settings.NUM_LINHAS_FORMULARIO_CADASTRO);
+    const initialFormState: FormData[] = Array(NUM_LINHAS_FORMULARIO_CADASTRO).fill({
+        nomeCrianca: '',
+        nomeResponsavel: '',
+        idade: '',
+        telefone: '',
+        comum: ''
+    });
+
     const [formData, setFormData] = useState<FormData[]>(initialFormState);
     const [portaria, setPortaria] = useState('');
     const firstInputRef = useRef<HTMLInputElement>(null);
