@@ -68,7 +68,7 @@ const RecordsTable: React.FC<RecordsTableProps> = ({ records, onPrint, onDelete 
         <div className="mt-4">
             <div className="flex flex-wrap gap-4 justify-between items-center mb-3">
                 <button onClick={() => onPrint(selectedIds)} className="btn bg-green-500 hover:bg-green-600 text-white" disabled={selectedIds.length === 0}>
-                    <PrinterIcon /> <span className="ml-2">Imprimir Selecionados ({selectedIds.length})</span>
+                    <PrinterIcon /> <span className="ml-2">Imprimir ({selectedIds.length})</span>
                 </button>
                 <div className="flex items-center space-x-2">
                     <label htmlFor="filtroPortaria" className="text-sm font-medium text-gray-700">Filtrar Portaria:</label>
