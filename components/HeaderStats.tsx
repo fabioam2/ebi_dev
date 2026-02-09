@@ -23,7 +23,7 @@ const StatCard: React.FC<{ icon: React.ReactNode, label: string, value: number, 
 
 const HeaderStats: React.FC<HeaderStatsProps> = ({ stats }) => {
     return (
-        <div className="flex justify-start items-center space-x-4 mb-4 flex-wrap gap-y-2">
+        <div className="flex justify-start items-center space-x-4 flex-wrap gap-y-2">
             <StatCard
                 icon={<PeopleIcon />}
                 label="Total"

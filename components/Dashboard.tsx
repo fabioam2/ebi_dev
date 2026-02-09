@@ -160,10 +160,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             <RegistrationForm onAddRecords={handleAddRecords} />
             <hr className="my-4"/>
             
-            <HeaderStats stats={stats} />
-
-            <div className="mt-3 flex justify-between items-center">
-                <div></div>
+            <div className="flex justify-between items-center mb-4">
+                <HeaderStats stats={stats} />
                 <div className="flex items-center space-x-2">
                     <div className="relative inline-block text-left">
                       <div className="group">
