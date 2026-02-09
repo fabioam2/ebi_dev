@@ -1,5 +1,5 @@
 {
-  "name": "Sistema de Gestão de Pulseiras",
+  "name": "EBI dev",
   "description": "Uma aplicação web para cadastro rápido de crianças em eventos, com suporte à impressão de etiquetas ZPL para pulseiras térmicas e gestão de dados local.",
   "requestFramePermissions": []
 }

@@ -11,7 +11,7 @@ interface RecordsTableProps {
 
 const RecordsTable: React.FC<RecordsTableProps> = ({ records, onPrint, onDelete }) => {
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
-    const [filterPortarias, setFilterPortarias] = useState<string[]>([]);
+    const [filterPortaria, setFilterPortaria] = useState<string>('');
 
     const portariaOptions = useMemo(() => {
         const portarias = new Set(records.map(r => r.portaria).filter(Boolean));
@@ -23,14 +23,14 @@ const RecordsTable: React.FC<RecordsTableProps> = ({ records, onPrint, onDelete 
       const visibleRecordIds = new Set(filteredRecords.map(r => r.id));
       setSelectedIds(prev => prev.filter(id => visibleRecordIds.has(id)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filterPortarias, records]);
+    }, [filterPortaria, records]);
 
     const filteredRecords = useMemo(() => {
-        if (filterPortarias.length === 0) {
+        if (!filterPortaria) {
             return records;
         }
-        return records.filter(r => filterPortarias.includes(r.portaria));
-    }, [records, filterPortarias]);
+        return records.filter(r => r.portaria === filterPortaria);
+    }, [records, filterPortaria]);
     
     const sortedRecords = useMemo(() => {
       return [...filteredRecords].sort((a,b) => b.id - a.id);
@@ -66,29 +66,26 @@ const RecordsTable: React.FC<RecordsTableProps> = ({ records, onPrint, onDelete 
 
     return (
         <div className="mt-4">
-            <div className="flex justify-between items-center mb-3">
+            <div className="flex flex-wrap gap-4 justify-between items-center mb-3">
+                <button onClick={() => onPrint(selectedIds)} className="btn bg-green-500 hover:bg-green-600 text-white" disabled={selectedIds.length === 0}>
+                    <PrinterIcon /> <span className="ml-2">Imprimir Selecionados ({selectedIds.length})</span>
+                </button>
                 <div className="flex items-center space-x-2">
                     <label htmlFor="filtroPortaria" className="text-sm font-medium text-gray-700">Filtrar Portaria:</label>
                     <select
                         id="filtroPortaria"
-                        multiple
-                        value={filterPortarias}
-                        onChange={e => setFilterPortarias(Array.from(e.target.selectedOptions, option => option.value))}
-                        className="form-multiselect block w-48 text-sm rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                        value={filterPortaria}
+                        onChange={e => setFilterPortaria(e.target.value)}
+                        className="form-select block w-48 text-sm rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                     >
+                        <option value="">Todas</option>
                         {portariaOptions.map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
-                    <button onClick={() => setFilterPortarias([])} className="btn-sm bg-gray-200 hover:bg-gray-300 text-gray-800">Limpar</button>
+                    <button onClick={() => setFilterPortaria('')} className="btn-sm bg-gray-200 hover:bg-gray-300 text-gray-800">Limpar</button>
+                    <button onClick={handlePrintList} className="btn-sm bg-blue-500 hover:bg-blue-600 text-white">
+                        <PrinterIcon /> <span className="ml-2">Imprimir Lista</span>
+                    </button>
                 </div>
-                 <button onClick={handlePrintList} className="btn-sm bg-blue-500 hover:bg-blue-600 text-white">
-                    <PrinterIcon /> <span className="ml-2">Imprimir Lista</span>
-                </button>
-            </div>
-            
-            <div className="flex items-center mb-3">
-                 <button onClick={() => onPrint(selectedIds)} className="btn bg-green-500 hover:bg-green-600 text-white" disabled={selectedIds.length === 0}>
-                    <PrinterIcon /> <span className="ml-2">Imprimir Selecionados ({selectedIds.length})</span>
-                </button>
             </div>
 
             <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg shadow-sm">
@@ -175,6 +172,19 @@ const RecordsTable: React.FC<RecordsTableProps> = ({ records, onPrint, onDelete 
                     font-weight: 500;
                     font-size: 0.875rem;
                     transition: all 0.2s;
+                }
+                .btn {
+                    display: inline-flex;
+                    align-items: center;
+                    padding: 0.5rem 1rem;
+                    border-radius: 0.375rem;
+                    font-weight: 500;
+                    transition: all 0.2s;
+                    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+                }
+                .btn:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
                 }
             `}</style>
         </div>
