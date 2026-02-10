@@ -43,7 +43,8 @@ const InstanceSetup: React.FC<InstanceSetupProps> = ({ instances }) => {
         localStorage.setItem(`${newInstanceId}_userDetails`, JSON.stringify(userDetails));
         localStorage.setItem(`${newInstanceId}_appSettings`, JSON.stringify(initialSettings));
 
-        window.location.assign(`/${newInstanceId}`);
+        // Redireciona para a nova URL com hash
+        window.location.assign(`/#/${newInstanceId}`);
     };
 
     return (
@@ -57,7 +58,8 @@ const InstanceSetup: React.FC<InstanceSetupProps> = ({ instances }) => {
                         <h2 className="text-lg font-semibold mb-3">Acessar Instância Existente</h2>
                         <div className="flex flex-wrap gap-2">
                            {instances.map(inst => (
-                               <a key={inst.id} href={`/${inst.id}`} className="btn bg-blue-500 hover:bg-blue-600 text-white">
+                               // Atualiza o link para usar o formato de hash
+                               <a key={inst.id} href={`/#/${inst.id}`} className="btn bg-blue-500 hover:bg-blue-600 text-white">
                                    {inst.name}
                                </a>
                            ))}
