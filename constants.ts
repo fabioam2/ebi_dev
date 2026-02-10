@@ -4,7 +4,7 @@ export const MAX_BACKUPS = 5;
 export const NUM_LINHAS_FORMULARIO_CADASTRO = 5;
 
 // [SEGURANCA]
-export const SENHA_ADMIN_REAL = 'mestre123';
+export const SENHA_ADMIN_REAL = 'Mestre123';
 export const SENHA_LOGIN = 'admin';
 
 // [IMPRESSORA_ZPL]

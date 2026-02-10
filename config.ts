@@ -30,7 +30,10 @@ export const loadConfig = (instanceId: string): SettingsType => {
     };
 
     if (typeof config.PALAVRAS_CHAVE_COMUM === 'string') {
-        config.PALAVRAS_CHAVE_COMUM = (config.PALAVRAS_CHAVE_COMUM as string).split(',').map(s => s.trim());
+        config.PALAVRAS_CHAVE_COMUM = (config.PALAVRAS_CHAVE_COMUM as string)
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean); // Filtra strings vazias
     }
 
     const PULSEIRAUTIL = (Number(config.TAMPULSEIRA) - Number(config.FECHO)) * Number(config.DOTS);

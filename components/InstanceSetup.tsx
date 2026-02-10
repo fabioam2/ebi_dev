@@ -8,14 +8,28 @@ interface InstanceSetupProps {
 }
 
 const InstanceSetup: React.FC<InstanceSetupProps> = ({ instances }) => {
+    const [isMasterAuthenticated, setIsMasterAuthenticated] = useState(false);
+    const [masterPassword, setMasterPassword] = useState('');
+    const [masterError, setMasterError] = useState('');
+
     const [instanceName, setInstanceName] = useState('');
     const [userName, setUserName] = useState('');
     const [userPhone, setUserPhone] = useState('');
     const [userEmail, setUserEmail] = useState('');
     const [loginPassword, setLoginPassword] = useState('');
     const [adminPassword, setAdminPassword] = useState('');
-    const [commonKeywords, setCommonKeywords] = useState(defaultConstants.PALAVRAS_CHAVE_COMUM.join(', '));
+    const [commonKeywords, setCommonKeywords] = useState('');
     const [error, setError] = useState('');
+
+    const handleMasterLogin = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (masterPassword === defaultConstants.SENHA_ADMIN_REAL) {
+            setIsMasterAuthenticated(true);
+        } else {
+            setMasterError('Senha Mestre incorreta.');
+            setMasterPassword('');
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -43,9 +57,36 @@ const InstanceSetup: React.FC<InstanceSetupProps> = ({ instances }) => {
         localStorage.setItem(`${newInstanceId}_userDetails`, JSON.stringify(userDetails));
         localStorage.setItem(`${newInstanceId}_appSettings`, JSON.stringify(initialSettings));
 
-        // Redireciona para a nova URL com hash
         window.location.assign(`/#/${newInstanceId}`);
     };
+
+    if (!isMasterAuthenticated) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-slate-100 font-sans">
+                <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm">
+                    <h2 className="text-2xl font-bold text-gray-700 text-center mb-6">Acesso à Configuração</h2>
+                    {masterError && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-4" role="alert">{masterError}</div>}
+                    <form onSubmit={handleMasterLogin}>
+                        <div className="mb-6">
+                            <label htmlFor="master_password" className="block text-gray-600 text-sm font-medium mb-2">Senha Mestre:</label>
+                            <input
+                                type="password"
+                                id="master_password"
+                                value={masterPassword}
+                                onChange={(e) => setMasterPassword(e.target.value)}
+                                required
+                                autoFocus
+                                className="w-full px-4 py-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            />
+                        </div>
+                        <button type="submit" className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300">
+                            Liberar Acesso
+                        </button>
+                    </form>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-slate-100 font-sans p-4">
@@ -58,7 +99,6 @@ const InstanceSetup: React.FC<InstanceSetupProps> = ({ instances }) => {
                         <h2 className="text-lg font-semibold mb-3">Acessar Instância Existente</h2>
                         <div className="flex flex-wrap gap-2">
                            {instances.map(inst => (
-                               // Atualiza o link para usar o formato de hash
                                <a key={inst.id} href={`/#/${inst.id}`} className="btn bg-blue-500 hover:bg-blue-600 text-white">
                                    {inst.name}
                                </a>
@@ -81,7 +121,13 @@ const InstanceSetup: React.FC<InstanceSetupProps> = ({ instances }) => {
 
                     <div>
                         <label className="block text-gray-700 text-sm font-bold mb-2">Palavras-chave da Comum (separadas por vírgula)</label>
-                        <textarea value={commonKeywords} onChange={e => setCommonKeywords(e.target.value)} className="form-input" rows={2}/>
+                        <textarea 
+                            value={commonKeywords} 
+                            onChange={e => setCommonKeywords(e.target.value)} 
+                            className="form-input" 
+                            rows={2}
+                            placeholder={`Ex: ${defaultConstants.PALAVRAS_CHAVE_COMUM.join(', ')}`}
+                        />
                     </div>
 
                     <details className="p-3 bg-gray-50 rounded-lg border cursor-pointer">
