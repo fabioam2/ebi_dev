@@ -1,17 +1,19 @@
 
 import React, { useState, useEffect, useRef, KeyboardEvent } from 'react';
-import { settings } from '../config';
+import { useInstance } from '../InstanceContext';
 import { ChildRecord } from '../types';
 import { CopyIcon, EraserIcon, UserPlusIcon } from './Icons';
 
 type FormData = Omit<ChildRecord, 'id' | 'cod_resp' | 'statusImpresso' | 'portaria'>;
 
 interface RegistrationFormProps {
-    onAddRecords: (records: FormData[]) => boolean;
+    onAddRecords: (records: (FormData & { portaria: string })[]) => boolean;
 }
 
 const RegistrationForm: React.FC<RegistrationFormProps> = ({ onAddRecords }) => {
+    const { settings } = useInstance();
     const NUM_LINHAS_FORMULARIO_CADASTRO = Number(settings.NUM_LINHAS_FORMULARIO_CADASTRO);
+    
     const initialFormState: FormData[] = Array(NUM_LINHAS_FORMULARIO_CADASTRO).fill({
         nomeCrianca: '',
         nomeResponsavel: '',

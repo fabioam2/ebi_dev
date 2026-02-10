@@ -1,6 +1,6 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import * as dataService from '../services/dataService';
+import { useInstance } from '../InstanceContext';
 
 interface AdminModalsProps {
     show: 'reset' | 'backup' | null;
@@ -25,26 +25,27 @@ const Modal: React.FC<{ title: string, show: boolean, onClose: () => void, child
 };
 
 const AdminModals: React.FC<AdminModalsProps> = ({ show, onClose, onReset, onRestore }) => {
+    const { instanceId } = useInstance();
     const [password, setPassword] = useState('');
     const [selectedBackup, setSelectedBackup] = useState('');
     const [backupPreview, setBackupPreview] = useState('');
-    const backups = dataService.listBackups();
+    
+    const backups = useMemo(() => dataService.listBackups(instanceId), [instanceId, show]);
 
     useEffect(() => {
         if (show) {
             setPassword('');
             setSelectedBackup(backups.length > 0 ? backups[0].key : '');
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [show]);
+    }, [show, backups]);
 
     useEffect(() => {
         if (selectedBackup) {
-            setBackupPreview(dataService.getBackupContent(selectedBackup));
+            setBackupPreview(dataService.getBackupContent(instanceId, selectedBackup));
         } else {
             setBackupPreview('');
         }
-    }, [selectedBackup]);
+    }, [selectedBackup, instanceId]);
 
     const handleReset = (e: React.FormEvent) => {
         e.preventDefault();

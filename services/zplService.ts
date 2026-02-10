@@ -1,7 +1,7 @@
 
-import { settings } from '../config';
+import { useInstance } from '../InstanceContext';
 
-const ZEBRA_ENDPOINT = "http://1227.0.0.1:9100/write";
+const ZEBRA_ENDPOINT = "http://127.0.0.1:9100/write";
 
 const processNameForZPL = (fullName: string, maxLength = 0): string => {
     const trimmedName = fullName.trim();
@@ -32,6 +32,7 @@ export const generateChildZPL = (
     codigo: number,
     telefone: string
 ): string => {
+    const { settings } = useInstance();
     const { TAMPULSEIRA, DOTS, PULSEIRAUTIL } = settings;
     const ini_pos = PULSEIRAUTIL - (70 * DOTS);
 
@@ -59,6 +60,7 @@ export const generateGuardianZPL = (
     nomesCriancasDoGrupo: string[],
     codigo: number
 ): string => {
+    const { settings } = useInstance();
     const { TAMPULSEIRA, DOTS, PULSEIRAUTIL } = settings;
     const ini_pos = PULSEIRAUTIL - (95 * DOTS);
     const id_pos = ini_pos + (55 * DOTS);

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ChildRecord } from '../types';
 import * as dataService from '../services/dataService';
 import * as zplService from '../services/zplService';
-import { settings } from '../config';
+import { useInstance } from '../InstanceContext';
 import RegistrationForm from './RegistrationForm';
 import RecordsTable from './RecordsTable';
 import HeaderStats from './HeaderStats';
@@ -17,6 +17,7 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
+    const { instanceId, settings } = useInstance();
     const [records, setRecords] = useState<ChildRecord[]>([]);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -25,9 +26,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     const [zplDebugInfo, setZplDebugInfo] = useState<{ zpl: string, ids: number[] } | null>(null);
     
     useEffect(() => {
-        setRecords(dataService.fetchAllRecords());
+        setRecords(dataService.fetchAllRecords(instanceId));
         setIsLoading(false);
-    }, []);
+    }, [instanceId]);
     
     useEffect(() => {
         if (message) {
@@ -39,21 +40,21 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     const executePrint = useCallback(async (zpl: string, ids: number[]) => {
         const result = await zplService.printZpl(zpl);
         if (result.success) {
-            const updatedRecords = dataService.updateRecordStatus(ids);
+            const updatedRecords = dataService.updateRecordStatus(instanceId, ids);
             setRecords(updatedRecords);
             setMessage({ type: 'success', text: 'Comando de impressão enviado com sucesso.' });
         } else {
             setMessage({ type: 'error', text: `Falha na impressão: ${result.message}` });
         }
-    }, []);
+    }, [instanceId]);
     
     const handleAddRecords = useCallback((newRecords: Omit<ChildRecord, 'id' | 'cod_resp' | 'statusImpresso'>[]) => {
         if (newRecords.length === 0) {
             setMessage({ type: 'error', text: 'Nenhum dado válido para cadastrar.' });
-            return;
+            return false;
         }
         try {
-            const updatedRecords = dataService.addMultipleRecords(newRecords);
+            const updatedRecords = dataService.addMultipleRecords(instanceId, newRecords);
             setRecords(updatedRecords);
             setMessage({ type: 'success', text: `${newRecords.length} cadastro(s) realizado(s)!` });
             return true;
@@ -62,15 +63,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             setMessage({ type: 'error', text: 'Erro ao salvar cadastros.' });
             return false;
         }
-    }, []);
+    }, [instanceId]);
 
     const handleDeleteRecord = useCallback((id: number, name: string) => {
         if (window.confirm(`Tem certeza que deseja apagar o cadastro de '${name}' (ID: ${id})?\nEsta ação não pode ser desfeita. Um backup do arquivo atual será criado.`)) {
-            const updatedRecords = dataService.deleteRecordById(id);
+            const updatedRecords = dataService.deleteRecordById(instanceId, id);
             setRecords(updatedRecords);
             setMessage({ type: 'success', text: `Cadastro de '${name}' (ID: ${id}) apagado.` });
         }
-    }, []);
+    }, [instanceId]);
     
     const handlePrint = useCallback(async (selectedIds: number[]) => {
         if (selectedIds.length === 0) {
@@ -80,12 +81,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
         const selectedRecords = records.filter(r => selectedIds.includes(r.id));
         const guardiansToPrint = new Map<number, { nomeResponsavel: string, criancas: string[] }>();
-        
         let allZplCommands = '';
 
         for (const record of selectedRecords) {
             allZplCommands += zplService.generateChildZPL(record.nomeCrianca, record.nomeResponsavel, record.idade, record.id, record.telefone) + '\n\n';
-            
             if (record.cod_resp) {
                 if (!guardiansToPrint.has(record.cod_resp)) {
                     guardiansToPrint.set(record.cod_resp, { nomeResponsavel: record.nomeResponsavel, criancas: [] });
@@ -106,11 +105,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         } else {
             executePrint(allZplCommands, selectedIds);
         }
-    }, [records, executePrint]);
+    }, [records, executePrint, settings.ZPL_DEBUG_MODE]);
 
     const handleResetData = useCallback((password: string): boolean => {
         if (password === settings.SENHA_ADMIN_REAL) {
-            const updatedRecords = dataService.resetAllData();
+            const updatedRecords = dataService.resetAllData(instanceId);
             setRecords(updatedRecords);
             setMessage({ type: 'success', text: 'Arquivo de cadastros zerado com sucesso! Backup criado.' });
             setShowAdminModals(null);
@@ -118,13 +117,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         }
         setMessage({type: 'error', text: 'Senha administrativa incorreta.'});
         return false;
-    }, []);
+    }, [instanceId, settings.SENHA_ADMIN_REAL]);
 
     const handleRestoreBackup = useCallback((password: string, backupKey: string): boolean => {
         if (password === settings.SENHA_ADMIN_REAL) {
-            const success = dataService.restoreBackup(backupKey);
+            const success = dataService.restoreBackup(instanceId, backupKey);
             if (success) {
-                setRecords(dataService.fetchAllRecords());
+                setRecords(dataService.fetchAllRecords(instanceId));
                 setMessage({ type: 'success', text: `Backup '${backupKey}' restaurado com sucesso!` });
                 setShowAdminModals(null);
                 return true;
@@ -135,7 +134,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         }
         setMessage({type: 'error', text: 'Senha administrativa incorreta.'});
         return false;
-    }, []);
+    }, [instanceId, settings.SENHA_ADMIN_REAL]);
 
     const stats = useMemo(() => {
         const total = records.length;
@@ -145,7 +144,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             return settings.PALAVRAS_CHAVE_COMUM.some(keyword => comumLower.includes(keyword));
         }).length;
         return { total, total3Anos, totalComumMatch };
-    }, [records]);
+    }, [records, settings.PALAVRAS_CHAVE_COMUM]);
 
     if (isLoading) {
         return <div>Carregando...</div>;

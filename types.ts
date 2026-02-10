@@ -10,3 +10,9 @@ export interface ChildRecord {
     portaria: string;
     cod_resp: number;
 }
+
+export interface InstanceInfo {
+    id: string;
+    name: string;
+    createdAt: string;
+}

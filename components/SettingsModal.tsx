@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { settings, saveSettings } from '../config';
+import { saveSettings } from '../config';
+import { useInstance } from '../InstanceContext';
 
 interface SettingsModalProps {
     show: boolean;
@@ -8,6 +9,7 @@ interface SettingsModalProps {
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose }) => {
+    const { instanceId, settings } = useInstance();
     const [password, setPassword] = useState('');
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [error, setError] = useState('');
@@ -16,13 +18,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose }) => {
 
     useEffect(() => {
         if (show) {
-            // Reset state when modal is opened
             setIsAuthenticated(false);
             setPassword('');
             setError('');
-            setCurrentSettings(settings); // Load fresh settings
+            setCurrentSettings(settings);
         }
-    }, [show]);
+    }, [show, settings]);
 
     const handleAuth = (e: React.FormEvent) => {
         e.preventDefault();
@@ -40,14 +41,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose }) => {
     };
 
     const handleSave = () => {
-        // @google/genai-fix: Cast settingsToSave to `any` to allow changing the type of `PALAVRAS_CHAVE_COMUM` for storage.
         const settingsToSave: any = { ...currentSettings };
-        // Convert array to comma-separated string for storage
         if (Array.isArray(settingsToSave.PALAVRAS_CHAVE_COMUM)) {
             settingsToSave.PALAVRAS_CHAVE_COMUM = settingsToSave.PALAVRAS_CHAVE_COMUM.join(', ');
         }
         
-        saveSettings(settingsToSave);
+        saveSettings(instanceId, settingsToSave);
         alert('Configurações salvas com sucesso! A aplicação será recarregada para aplicar as alterações.');
         window.location.reload();
     };
@@ -168,8 +167,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ show, onClose }) => {
     );
 };
 
-// FIX: Corrected the default function for the `onChange` prop to accept a value. This resolves multiple type errors
-// by ensuring the function signature inferred by TypeScript matches its usage throughout the component.
 const InputField = ({ label, value, onChange = (_value: any) => {}, type = 'text', readOnly = false }) => (
     <div>
         <label className="block text-gray-700 text-sm font-bold mb-2">{label}</label>
@@ -199,6 +196,5 @@ const ToggleField = ({ label, checked, onChange, description }) => (
         </div>
     </div>
 );
-
 
 export default SettingsModal;

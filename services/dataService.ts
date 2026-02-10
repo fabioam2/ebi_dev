@@ -1,12 +1,12 @@
 
 import { ChildRecord } from '../types';
-import { settings } from '../config';
+import { loadConfig } from '../config';
 
-const DATA_KEY = 'childRecords';
+const DATA_KEY_BASE = 'childRecords';
 
-const getRecords = (): ChildRecord[] => {
+const getRecords = (instanceId: string): ChildRecord[] => {
     try {
-        const recordsJson = localStorage.getItem(DATA_KEY);
+        const recordsJson = localStorage.getItem(`${instanceId}_${DATA_KEY_BASE}`);
         if (!recordsJson) return [];
         const records = JSON.parse(recordsJson) as ChildRecord[];
         return Array.isArray(records) ? records : [];
@@ -16,18 +16,21 @@ const getRecords = (): ChildRecord[] => {
     }
 };
 
-const saveRecords = (records: ChildRecord[]): void => {
-    localStorage.setItem(DATA_KEY, JSON.stringify(records));
+const saveRecords = (instanceId: string, records: ChildRecord[]): void => {
+    localStorage.setItem(`${instanceId}_${DATA_KEY_BASE}`, JSON.stringify(records));
 };
 
-const createBackup = (): void => {
-    const currentData = localStorage.getItem(DATA_KEY);
+const createBackup = (instanceId: string): void => {
+    const settings = loadConfig(instanceId);
+    const dataKey = `${instanceId}_${DATA_KEY_BASE}`;
+    const currentData = localStorage.getItem(dataKey);
     if (!currentData || JSON.parse(currentData).length === 0) return;
+    
     const MAX_BACKUPS = Number(settings.MAX_BACKUPS);
 
     for (let i = MAX_BACKUPS; i >= 1; i--) {
-        const currentBackupKey = `backup_${i}`;
-        const nextBackupKey = `backup_${i + 1}`;
+        const currentBackupKey = `${instanceId}_backup_${i}`;
+        const nextBackupKey = `${instanceId}_backup_${i + 1}`;
         const backupData = localStorage.getItem(currentBackupKey);
 
         if (backupData) {
@@ -38,23 +41,20 @@ const createBackup = (): void => {
             }
         }
     }
-    localStorage.setItem('backup_1', currentData);
+    localStorage.setItem(`${instanceId}_backup_1`, currentData);
 };
 
-export const listBackups = (): { key: string; date: Date | null }[] => {
+export const listBackups = (instanceId: string): { key: string; date: Date | null }[] => {
+    const settings = loadConfig(instanceId);
     const backups = [];
     const MAX_BACKUPS = Number(settings.MAX_BACKUPS);
     for (let i = 1; i <= MAX_BACKUPS; i++) {
         const key = `backup_${i}`;
-        const data = localStorage.getItem(key);
+        const fullKey = `${instanceId}_${key}`;
+        const data = localStorage.getItem(fullKey);
         if (data) {
              try {
-                // Attempt to get a date from the first record for sorting/display
-                const records = JSON.parse(data) as ChildRecord[];
-                // This assumes a date field might exist, but since it doesn't, we can't reliably get a date.
-                // For simplicity, we'll just use the backup number for identity.
-                // In a real app, we'd store metadata with the backup.
-                backups.push({ key, date: new Date() }); // Placeholder date
+                backups.push({ key, date: new Date() }); // Placeholder
             } catch (e) {
                  backups.push({ key, date: null });
             }
@@ -64,16 +64,19 @@ export const listBackups = (): { key: string; date: Date | null }[] => {
 };
 
 
-export const restoreBackup = (backupKey: string): boolean => {
-    const backupData = localStorage.getItem(backupKey);
+export const restoreBackup = (instanceId: string, backupKey: string): boolean => {
+    const fullBackupKey = `${instanceId}_${backupKey}`;
+    const dataKey = `${instanceId}_${DATA_KEY_BASE}`;
+    const backupData = localStorage.getItem(fullBackupKey);
     if (!backupData) return false;
-    createBackup(); // Backup current state before overwriting
-    localStorage.setItem(DATA_KEY, backupData);
+    createBackup(instanceId); // Backup current state before overwriting
+    localStorage.setItem(dataKey, backupData);
     return true;
 };
 
-export const getBackupContent = (backupKey: string): string => {
-    const backupData = localStorage.getItem(backupKey);
+export const getBackupContent = (instanceId: string, backupKey: string): string => {
+    const fullBackupKey = `${instanceId}_${backupKey}`;
+    const backupData = localStorage.getItem(fullBackupKey);
     if (!backupData) return "Backup não encontrado.";
     try {
         const records = JSON.parse(backupData) as ChildRecord[];
@@ -86,13 +89,13 @@ export const getBackupContent = (backupKey: string): string => {
 };
 
 
-export const fetchAllRecords = (): ChildRecord[] => {
-    return getRecords();
+export const fetchAllRecords = (instanceId: string): ChildRecord[] => {
+    return getRecords(instanceId);
 };
 
-export const addMultipleRecords = (newRecords: Omit<ChildRecord, 'id' | 'cod_resp' | 'statusImpresso'>[]): ChildRecord[] => {
-    createBackup();
-    const allRecords = getRecords();
+export const addMultipleRecords = (instanceId: string, newRecords: Omit<ChildRecord, 'id' | 'cod_resp' | 'statusImpresso'>[]): ChildRecord[] => {
+    createBackup(instanceId);
+    const allRecords = getRecords(instanceId);
     let nextId = allRecords.length > 0 ? Math.max(...allRecords.map(r => r.id)) + 1 : 1;
     let nextCodResp = allRecords.length > 0 ? Math.max(...allRecords.map(r => r.cod_resp)) + 1 : 1;
     
@@ -104,38 +107,38 @@ export const addMultipleRecords = (newRecords: Omit<ChildRecord, 'id' | 'cod_res
     }));
 
     const updatedRecords = [...allRecords, ...recordsToAdd];
-    saveRecords(updatedRecords);
+    saveRecords(instanceId, updatedRecords);
     return updatedRecords;
 };
 
-export const deleteRecordById = (id: number): ChildRecord[] => {
-    createBackup();
-    let allRecords = getRecords();
+export const deleteRecordById = (instanceId: string, id: number): ChildRecord[] => {
+    createBackup(instanceId);
+    let allRecords = getRecords(instanceId);
     const updatedRecords = allRecords.filter(record => record.id !== id);
-    saveRecords(updatedRecords);
+    saveRecords(instanceId, updatedRecords);
     return updatedRecords;
 };
 
-export const updateRecordStatus = (ids: number[]): ChildRecord[] => {
-    createBackup();
-    let allRecords = getRecords();
+export const updateRecordStatus = (instanceId: string, ids: number[]): ChildRecord[] => {
+    createBackup(instanceId);
+    let allRecords = getRecords(instanceId);
     const updatedRecords = allRecords.map(record => {
         if (ids.includes(record.id)) {
             return { ...record, statusImpresso: 'S' as 'S' };
         }
         return record;
     });
-    saveRecords(updatedRecords);
+    saveRecords(instanceId, updatedRecords);
     return updatedRecords;
 };
 
-export const resetAllData = (): ChildRecord[] => {
-    createBackup();
-    saveRecords([]);
+export const resetAllData = (instanceId: string): ChildRecord[] => {
+    const settings = loadConfig(instanceId);
+    createBackup(instanceId);
+    saveRecords(instanceId, []);
     const MAX_BACKUPS = Number(settings.MAX_BACKUPS);
-    // Per PHP logic, clear older backups but keep .bkp.1
     for (let i = 2; i <= MAX_BACKUPS; i++) {
-        localStorage.removeItem(`backup_${i}`);
+        localStorage.removeItem(`${instanceId}_backup_${i}`);
     }
     return [];
 };
